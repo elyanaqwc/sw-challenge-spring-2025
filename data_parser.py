@@ -1,0 +1,214 @@
+import os
+from concurrent.futures import ThreadPoolExecutor
+from collections import Counter
+import re
+from datetime import datetime, timedelta, time
+import csv
+import bisect 
+
+class DataParser:
+    def __init__(self, dir_path):
+        self.dir_path = dir_path
+        self.filtered_data = []
+
+    def load_csv_data(self):
+        def read_csv(file_path):
+            unfiltered_data = []
+            try:
+                with open(os.path.join(self.dir_path, file_path), 'r') as file:
+                    csv_reader = csv.reader(file)
+                    next(csv_reader) 
+                    for line in csv_reader:
+                        if len(line) == 3:
+                            row = {
+                                'timestamp': line[0].strip(),
+                                'price': line[1].strip(),
+                                'size': line[2].strip()
+                            }
+                            unfiltered_data.append(row)
+            except (FileNotFoundError, OSError) as e:
+                print(f"Error reading file {file_path}: {e}")
+            return unfiltered_data
+
+        csv_files = [file for file in os.listdir(self.dir_path) if file.endswith('.csv')]
+
+        with ThreadPoolExecutor() as executor:
+            results = list(executor.map(read_csv, csv_files))
+
+        return [item for sublist in results for item in sublist]
+    
+    def validate_data(self):
+        trading_start = time(9, 30)
+        trading_end = time(16, 0)
+        data = self.load_csv_data()
+
+        prices = []
+        for row in data:
+            price_str = row.get("price", "").strip()
+            try:
+                price = float(price_str)
+                prices.append(price)
+            except ValueError:
+                continue
+        if prices:
+            sorted_prices = sorted(prices)
+            n = len(sorted_prices)
+
+            q1_index = int(0.25 * n)
+            Q1 = sorted_prices[q1_index]
+
+            q3_index = int(0.75 * n)
+            Q3 = sorted_prices[q3_index]
+
+            IQR = Q3 - Q1
+
+            lower_bound = Q1 - 1.5 * IQR
+            upper_bound = Q3 + 1.5 * IQR
+        else:
+            lower_bound, upper_bound = 0, 0  
+
+        timestamp_counter = Counter(row["timestamp"] for row in data if "timestamp" in row)
+
+        self.filtered_data = []
+
+        for row in data:
+            price_str = row.get("price", "").strip()
+            size_str = row.get("size", "").strip()
+            timestamp_str = row.get("timestamp")
+
+            if not price_str or not size_str or not timestamp_str:
+                continue
+            
+            try:
+                price = float(price_str)
+                size = int(size_str)
+                timestamp = self.__convert_timestamp(timestamp_str)
+                if timestamp is None:
+                    continue
+            except ValueError:
+                continue  
+
+            if (
+                timestamp_counter[timestamp_str] == 1   
+                and lower_bound <= price <= upper_bound  
+                and size > 0  
+                and trading_start <= timestamp.time() <= trading_end
+            ):
+                self.filtered_data.append({"timestamp": timestamp, "price": price, "size": size})
+        return self.filtered_data
+
+    def __convert_timestamp(self, timestamp):
+        try:
+            return datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
+        except ValueError:
+            return None
+
+    def __get_user_time_range(self):
+        timestamp_pattern = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}'
+        
+        if not self.filtered_data:
+            print("No data available. Cannot determine a valid time range.")
+            return None  
+
+        last_timestamp = self.filtered_data[-1]['timestamp']
+        
+        while True:
+            start_time = input("Enter start time (e.g. 2024-09-19 20:47:02.535): ")
+            if not re.fullmatch(timestamp_pattern, start_time):
+                print("Invalid start time format. Try again.")
+                continue
+
+            start_time_converted = self.__convert_timestamp(start_time)
+
+            end_time = input("Enter end time (e.g. 2024-09-20 20:47:02.535): ")
+            if not re.fullmatch(timestamp_pattern, end_time):
+                print("Invalid end time format. Try again.")
+                continue
+
+            end_time_converted = self.__convert_timestamp(end_time)
+
+            if start_time_converted > end_time_converted:
+                print("Start time must be before end time. Try again.")
+                continue
+
+            if end_time_converted > last_timestamp:
+                print("End time must be within available data range. Try again.")
+                continue
+
+            return start_time_converted, end_time_converted
+
+    def __get_intervals(self):
+        total_seconds = 0
+        interval_pattern = r'^\d+[dhms](\d+[dhms])*$'        
+        conversion = {'d': 86400, 'h': 3600, 'm': 60, 's': 1} 
+        while True:
+            user_interval = input("Enter a valid interval (e.g. 1h30m): ")
+            if not re.fullmatch(interval_pattern, user_interval):
+                print('Invalid interval. Please try again.')
+                continue
+        
+            matches = re.findall(r'(\d+)([dhms])', user_interval) #list of tuples
+            total_seconds = sum(int(value) * conversion[unit] for value, unit in matches)
+
+            if total_seconds <= 0:
+                print("Interval must be greater than 0 seconds. Try again.")
+                continue
+            
+            return total_seconds
+        
+    def generate_ohlcv(self):
+        start_end_times = self.__get_user_time_range()
+        interval = self.__get_intervals()
+
+        ohlcv_list = []
+        if not start_end_times:
+            print("Invalid time range.")
+            return []
+
+        start_time, end_time = start_end_times
+        data = self.filtered_data        
+
+        data.sort(key=lambda x: x['timestamp'])
+
+        if not data:
+            print("No data found in the specified time range.")
+            return []
+
+        timestamps = [row['timestamp'] for row in data]
+
+        start_index = bisect.bisect_left(timestamps, start_time)
+        end_index = bisect.bisect_right(timestamps, end_time)
+        interval_end_time = start_time + timedelta(seconds=interval)
+
+        while start_time < end_time:
+            interval_data = []
+
+            while start_index < end_index and start_time <= data[start_index]["timestamp"] < interval_end_time:
+                interval_data.append(data[start_index])
+                start_index += 1 
+
+            if interval_data:
+                ohlcv_list.append({
+                    'timestamp': datetime.strftime(interval_data[0]['timestamp'], "%Y-%m-%d %H:%M:%S.%f"),
+                    'open': interval_data[0]['price'],
+                    'high': max(d['price'] for d in interval_data),
+                    'low': min(d['price'] for d in interval_data),
+                    'close': interval_data[-1]['price'],
+                    'volume': sum(d['size'] for d in interval_data)
+                })
+
+            start_time = interval_end_time
+            interval_end_time = start_time + timedelta(seconds=interval)
+        return ohlcv_list
+    
+    def generate_csv(self):
+        csv_name = '1d_interval.csv'
+        try:
+            with open(csv_name, 'w', newline='') as csvfile:
+                columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+                writer = csv.DictWriter(csvfile, fieldnames=columns )
+                writer.writeheader()
+                writer.writerows(self.generate_ohlcv())        
+        except Exception as e:
+            print(f'Error occured: {e}')
+

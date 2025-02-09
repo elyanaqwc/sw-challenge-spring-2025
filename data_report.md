@@ -30,8 +30,6 @@ with ThreadPoolExecutor() as executor:
 
 ## Data Cleaning
 
-**Execution Time:** ~5-6s (calls `load_csv_data` function)
-
 ### Errors Found:
 1. **Negative Prices**
 2. **Missing Prices**
@@ -56,8 +54,11 @@ from collections import Counter
 timestamp_counter = Counter(row["timestamp"] for row in data if "timestamp" in row)
 ```
 
-### Note:
-I did **not** filter out data outside of trading hours because a significant amount of it might be useful for analysis. **Future improvement:** Allow user input to decide whether to include or exclude this data.
+### Problem:
+Since we want to filter out data outside of trading hours, converting each timestamp to **datetime objects** is slow.
+
+### Potential Solutions:
+- Utilize optimized **date-time parsing libraries** designed for large datasets (e.g., `pandas.to_datetime()` or `ciso8601`).
 
 ---
 
@@ -71,18 +72,16 @@ I implemented **helper functions** to prompt the user for:
 
 These functions use **regex and while loops** to ensure that the user’s input is in the correct format.
 
-**Limitation:** The current design assumes that the user is well-informed about the data. For example, the **start time and end time must be provided down to the millisecond**.
+**Limitation:** The current design assumes that the user is well-informed about the data. For example, the **start time and end time must be provided down to the millisecond**. The user should also be aware that only time ranges within trading hours is allowed.
 
 ---
 
 ## OHLCV Generation
 
 ### Steps:
-1. Convert each timestamp into **datetime objects** and **sort the data** by timestamp.
+1. **Sort the data** by timestamp.
 
     ```python
-    for row in data:
-        row['timestamp'] = self.__convert_timestamp(row['timestamp'])
     data.sort(key=lambda x: x['timestamp'])
     ```
 
@@ -105,12 +104,6 @@ These functions use **regex and while loops** to ensure that the user’s input 
         while start_index < end_index and start_time <= data[start_index]["timestamp"] < interval_end_time:
             # Process interval data
     ```
-
-### Problem:
-Converting each timestamp to **datetime objects** is slow.
-
-### Potential Solutions:
-- Utilize optimized **date-time parsing libraries** designed for large datasets (e.g., `pandas.to_datetime()` or `ciso8601`).
 
 ---
 
