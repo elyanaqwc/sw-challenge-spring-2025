@@ -45,6 +45,7 @@ and extreme outliers.
     ```ruby
     YYYY-MM-DD HH:MM:SS.sss
     ```
+
     
    **Validation Rules**:
     - The start time must not exceed or equate to the end time.
@@ -55,6 +56,7 @@ and extreme outliers.
     ```ruby
     Enter a valid interval (e.g. 1h30m):
     ```
+
     
     whereby the interval must match the following pattern:
     ```ruby
