@@ -64,8 +64,6 @@ and extreme outliers.
     - The end time must not exceed the last timestamp in the data.
     - Both time ranges must be within trading hours (9:30 AM to 4:00 PM EST).
     
-### Assumptions and Limitations
-
 ### Assumptions
 - Outlier Filtering: The class filters out outliers based on the Interquartile Range (IQR) method before processing the data.
 
@@ -74,4 +72,4 @@ and extreme outliers.
 - Trading Hours: Only data within the trading hours (9:30 AM to 4:00 PM) is included; any data outside of this range is excluded from processing.
 
 ### Limitations
-Processing Speed: Depending on the size of the dataset, processing might take time, especially with large amounts of tick data. Optimizations for speed may be necessary for larger datasets.
+- Processing Speed: Depending on the size of the dataset, processing might take time (~7-9s for data validation), especially with large amounts of tick data. Optimizations for speed may be necessary for larger datasets.
