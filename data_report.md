@@ -18,7 +18,7 @@ row = {
 
 ### Problem: Slow Execution Time (~22s)
 
-### Solution:
+### Solution: Multithreading (~5-7s)
 Initially, I used Python’s `threading` module to create individual threads for each file and store the results in a `Queue` object. However, I later learned that `ThreadPoolExecutor` is a better alternative, as it handles thread management automatically. This is how I implemented it:
 
 ```python
@@ -46,7 +46,7 @@ upper_bound = Q3 + 1.5 * IQR
 ```
 
 #### Handling Error 4:
-To remove duplicate timestamps, I used Python's `Counter` module to count occurrences of each timestamp and filtered out any rows where the timestamp appeared more than once. I chose not to store even the first occurrence of any duplicate, as it's unclear which timestamp contains the valid price data.
+To remove duplicate timestamps, I used Python's `Counter` module to count occurrences of each timestamp and filtered out any rows where the timestamp appeared more than once. I chose not to store the first occurrence of any duplicate, as I am not sure which timestamp contains the valid price data.
 
 ```python
 from collections import Counter
@@ -55,7 +55,12 @@ timestamp_counter = Counter(row["timestamp"] for row in data if "timestamp" in r
 ```
 
 ### Problem:
-Since we want to filter out data outside of trading hours, converting each timestamp to **datetime objects** is slow.
+Since we want to filter out data outside of trading hours, converting each timestamp to **datetime objects** is slow. Initially, I used strptime() for datetime conversion. Later on, I learned that
+fromisformat() is faster, so I switched to that. 
+
+```python
+return datetime.fromisoformat(timestamp)
+```
 
 ### Potential Solutions:
 - Utilize optimized **date-time parsing libraries** designed for large datasets (e.g., `pandas.to_datetime()` or `ciso8601`).
