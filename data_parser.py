@@ -99,7 +99,7 @@ class DataParser:
 
     def __convert_timestamp(self, timestamp):
         try:
-            return datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
+            return datetime.fromisoformat(timestamp)
         except ValueError:
             return None
 
@@ -127,7 +127,7 @@ class DataParser:
 
             end_time_converted = self.__convert_timestamp(end_time)
 
-            if start_time_converted > end_time_converted:
+            if start_time_converted >= end_time_converted:
                 print("Start time must be before end time. Try again.")
                 continue
 
@@ -156,40 +156,43 @@ class DataParser:
             
             return total_seconds
         
+
     def generate_ohlcv(self):
         start_end_times = self.__get_user_time_range()
         interval = self.__get_intervals()
 
-        ohlcv_list = []
         if not start_end_times:
             print("Invalid time range.")
             return []
 
         start_time, end_time = start_end_times
-        data = self.filtered_data        
-
-        data.sort(key=lambda x: x['timestamp'])
+        data = self.filtered_data
 
         if not data:
             print("No data found in the specified time range.")
             return []
 
+        data.sort(key=lambda x: x['timestamp'])
         timestamps = [row['timestamp'] for row in data]
 
         start_index = bisect.bisect_left(timestamps, start_time)
         end_index = bisect.bisect_right(timestamps, end_time)
-        interval_end_time = start_time + timedelta(seconds=interval)
 
-        while start_time < end_time:
+        ohlcv_list = []
+
+        while start_index < end_index:
             interval_data = []
+            first_timestamp = data[start_index]["timestamp"]  
+            interval_start_time = first_timestamp  
+            interval_end_time = interval_start_time + timedelta(seconds=interval)
 
-            while start_index < end_index and start_time <= data[start_index]["timestamp"] < interval_end_time:
+            while start_index < end_index and data[start_index]["timestamp"] < interval_end_time:
                 interval_data.append(data[start_index])
-                start_index += 1 
+                start_index += 1
 
             if interval_data:
                 ohlcv_list.append({
-                    'timestamp': datetime.strftime(interval_data[0]['timestamp'], "%Y-%m-%d %H:%M:%S.%f"),
+                    'timestamp': first_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],  
                     'open': interval_data[0]['price'],
                     'high': max(d['price'] for d in interval_data),
                     'low': min(d['price'] for d in interval_data),
@@ -197,8 +200,6 @@ class DataParser:
                     'volume': sum(d['size'] for d in interval_data)
                 })
 
-            start_time = interval_end_time
-            interval_end_time = start_time + timedelta(seconds=interval)
         return ohlcv_list
     
     def generate_csv(self):
