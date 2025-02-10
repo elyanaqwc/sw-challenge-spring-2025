@@ -27,13 +27,12 @@ and extreme outliers.
     parser = DataParser(dir_path)
 
 4. **Call the validate_data function and generate_csv function**:
-   You can call both functions in sequence to validate the data and generate the CSV file. The generate_csv function will  
-   prompt you to enter a time range and interval.
+   You can call both functions in sequence to validate the data and generate the CSV file.
     ```python
     parser.validate_data()
     parser.generate_csv()
 
-5. **User Inputs**: 
+6. **User Inputs**: 
     When calling generate_csv, you will be prompted to enter a start time:
     ```ruby
     Enter start time (e.g. 2024-09-19 20:47:02.535): 
