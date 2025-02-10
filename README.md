@@ -1,15 +1,16 @@
 ## Introduction
 
-The DataParser class is designed to streamline the process of handling financial tick data. It performs the following key tasks:
+The **DataParser** class is designed to streamline the process of handling financial tick data. It performs the following key tasks:
 
-- Data Loading: Efficiently loads CSV files containing tick data from a specified directory, utilizing multithreading to speed up the process.
-- Data Cleaning: Parses invalid data such as negative prices, missing prices, duplicate timestamps, 
+- **Data Loading**: Efficiently loads CSV files containing tick data from a specified directory, utilizing multithreading to speed up the process.
+- **Data Cleaning**: Parses invalid data such as negative prices, missing prices, duplicate timestamps, 
 and extreme outliers.
-- Data Interface: Accepts user-defined time intervals and ranges, then generates a CSV file containing OHLCV bars for the specified time frames.
+- **Data Interface**: Accepts user-defined time intervals and ranges, then generates a CSV file containing OHLCV bars for the specified time frames.
 ### Setup
 
 1. **Clone the repository**:
    To clone this repository to your local machine, run the following command in your terminal:
+   
    ```bash
    git clone https://github.com/elyanaqwc/sw-challenge-spring-2025.git
    ```
@@ -25,18 +26,15 @@ and extreme outliers.
     ```python
     parser = DataParser(dir_path)
 
-4. **Call the validate_data function**:
+4. **Call the validate_data function and generate_csv function**:
+   You can call both functions in sequence to validate the data and generate the CSV file. The generate_csv function will  
+   prompt you to enter a time range and interval.
     ```python
     parser.validate_data()
+    parser.generate_csv()
 
-5. **Generate CSV:**
-   This function will prompt you for a time range and interval.
-   After validation, you can generate the CSV file with:
-   ```python
-   parser.generate_csv()
-
-6. **User Inputs**: 
-    You will be prompted to enter a start time:
+5. **User Inputs**: 
+    When calling generate_csv, you will be prompted to enter a start time:
     ```ruby
     Enter start time (e.g. 2024-09-19 20:47:02.535): 
     ```
