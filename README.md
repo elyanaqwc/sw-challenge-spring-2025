@@ -32,7 +32,7 @@ and extreme outliers.
     parser.validate_data()
     parser.generate_csv()
 
-6. **User Inputs**: 
+5. **User Inputs**: 
     When calling generate_csv, you will be prompted to enter a start time:
     ```ruby
     Enter start time (e.g. 2024-09-19 20:47:02.535): 
@@ -45,21 +45,37 @@ and extreme outliers.
     ```ruby
     YYYY-MM-DD HH:MM:SS.sss
     ```
+
+    
+   **Validation Rules**:
+    - The start time must not exceed or equate to the end time.
+    - The end time must not exceed the last timestamp in the data.
+    - Both time ranges must be within trading hours (9:30 AM to 4:00 PM EST).
      
     You will be prompted to enter an interval:
     ```ruby
     Enter a valid interval (e.g. 1h30m):
     ```
+
     
     whereby the interval must match the following pattern:
     ```ruby
     ^\d+[dhms](\d+[dhms])*$
     ```
+   **Examples of valid intervals**:
+   ```ruby
+   1d 
+   1d1h1m1s
+   2h30m
+   30s
+   ```
+  
+   **Examples of invalid intervals**:
+   ```ruby
+   2d 3h (There should be no space between units)
+   1h1d (Units should follow correct order: Days -> Hours -> Minutes -> Seconds)
+   ```
     
-    **Validation Rules**:
-    - The start time must not exceed or equate to the end time.
-    - The end time must not exceed the last timestamp in the data.
-    - Both time ranges must be within trading hours (9:30 AM to 4:00 PM EST).
     
 ### Assumptions
 - Outlier Filtering: The class filters out outliers based on the Interquartile Range (IQR) method before processing the data.
@@ -69,4 +85,4 @@ and extreme outliers.
 - Trading Hours: Only data within the trading hours (9:30 AM to 4:00 PM) is included; any data outside of this range is excluded from processing.
 
 ### Limitations
-- Processing Speed: Depending on the size of the dataset, processing might take time (~7-9s for data validation), especially with large amounts of tick data. Optimizations for speed may be necessary for larger datasets.
+- Processing Speed: Depending on the size of the dataset, processing might take time (~7-9s for data loading and validation combined), especially with large amounts of tick data. Optimizations for speed may be necessary for larger datasets.
