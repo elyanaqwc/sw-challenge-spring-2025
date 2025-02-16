@@ -168,7 +168,7 @@ class DataParser:
         total_seconds = 0
 
         # define regex pattern for interval
-        interval_pattern = r'^\d+[dhms](\d+[dhms])*$'        
+        interval_pattern = r'^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$'       
         conversion = {'d': 86400, 'h': 3600, 'm': 60, 's': 1} 
         while True:
             user_interval = input("Enter a valid interval (e.g. 1h30m): ")
@@ -228,7 +228,7 @@ class DataParser:
             interval_end_time = interval_start_time + timedelta(seconds=interval)   # reset interval end time
 
             # if current timestamp is less than the interval end time, it belongs to this interval
-            while start_index < end_index and data[start_index]["timestamp"] < interval_end_time:
+            while data[start_index]["timestamp"] < interval_end_time:
                 interval_data.append(data[start_index])
                 start_index += 1
 

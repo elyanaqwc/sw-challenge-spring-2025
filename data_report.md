@@ -109,7 +109,7 @@ These functions use **regex and while loops** to ensure that the user’s input 
         first_timestamp = data[start_index]["timestamp"]  
         interval_start_time = first_timestamp  
         interval_end_time = interval_start_time + timedelta(seconds=interval)
-        while start_index < end_index and data[start_index]["timestamp"] < interval_end_time:
+        while data[start_index]["timestamp"] < interval_end_time:
     ```
 
 ---
